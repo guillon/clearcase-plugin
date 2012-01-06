@@ -308,6 +308,24 @@ public abstract class AbstractClearCaseScm extends SCM {
 
     @Override
     public boolean requiresWorkspaceForPolling() {
+        // Related to Jenkins issue #JENKINS-1348.
+        // This should be made a global feature of jenkins, but apparently
+        // it is the only way to avoid spurious triggering of jobs when for
+        // some reason the job's node is offline when the polling occurs.
+        // The effect of this issue is that for instance when jenkins starts
+        // (and thus not all nodes are instantly online) or when a node is put
+        // offline explicitly, a number of jobs can be triggered and executed
+        // for no valuable reason.
+        // The fix uses an environment variable (not a job configuration) for
+        // now as it is a work around for a feature that should be pushed into
+        // the main jenkins code.
+        // Using a job configuration would introduce legacy configuration in
+        // the plugin config that is not necessary if this is fixed in the
+        // jenkins core.
+        String fixWorkspace = System.getenv("JENKINS_CLEARCASE_FIX_WORKSPACE");
+        fixWorkspace = (fixWorkspace == null) ? "0": fixWorkspace;
+        if (!fixWorkspace.equals("0"))
+            return false;
         return true;
     }
 
